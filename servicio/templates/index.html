@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Valoración de síntomas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+  <div class="pagina">
+    <header class="encabezado">
+      <p class="sobrelinea">Apoyo a la decisión clínica</p>
+      <h1>Valoración de síntomas</h1>
+      <p class="bajada">Introduzca los datos del episodio. El servicio responde con uno de cuatro estados. La decisión sigue siendo del médico.</p>
+    </header>
+
+    <main class="tarjeta">
+      {% if result %}
+      <section class="resultado {{ result.state_class }}" aria-live="polite">
+        <p class="etiqueta-resultado">Estado</p>
+        <h2>{{ result.state }}</h2>
+        <p>{{ result.rule }}</p>
+        <p class="version">Versión {{ version }}</p>
+      </section>
+      {% endif %}
+
+      {% if error %}
+      <p id="error-formulario" class="alerta" role="alert">{{ error }}</p>
+      {% endif %}
+
+      <form id="formulario-prediccion" method="post" action="{{ url_for('predict_form') }}" novalidate>
+        <div class="campos">
+          <div class="campo">
+            <label for="fiebre">Fiebre (°C) <span class="obligatorio">(obligatorio)</span></label>
+            <input id="fiebre" name="fiebre" type="text" inputmode="decimal" required
+              value="{{ form_values.fiebre }}"
+              aria-required="true"
+              aria-invalid="{{ 'true' if error_field == 'fiebre' else 'false' }}"
+              {% if error_field == 'fiebre' and error %}aria-describedby="pista-fiebre error-formulario"{% else %}aria-describedby="pista-fiebre"{% endif %}
+              {% if error_field == 'fiebre' %}class="invalido"{% endif %}>
+            <p id="pista-fiebre" class="pista">Entre 34 y 43. Puede usar coma o punto.</p>
+          </div>
+
+          <div class="campo">
+            <label for="intensidad_dolor">Intensidad del dolor, de 0 a 10 <span class="obligatorio">(obligatorio)</span></label>
+            <input id="intensidad_dolor" name="intensidad_dolor" type="number" min="0" max="10" step="1" required
+              value="{{ form_values.intensidad_dolor }}"
+              aria-required="true"
+              aria-invalid="{{ 'true' if error_field == 'intensidad_dolor' else 'false' }}"
+              {% if error_field == 'intensidad_dolor' and error %}aria-describedby="pista-dolor error-formulario"{% else %}aria-describedby="pista-dolor"{% endif %}
+              {% if error_field == 'intensidad_dolor' %}class="invalido"{% endif %}>
+            <p id="pista-dolor" class="pista">0 es sin dolor y 10 es el máximo.</p>
+          </div>
+
+          <div class="campo">
+            <label for="dias_sintomas">Días con síntomas <span class="obligatorio">(obligatorio)</span></label>
+            <input id="dias_sintomas" name="dias_sintomas" type="number" min="0" max="3650" step="1" required
+              value="{{ form_values.dias_sintomas }}"
+              aria-required="true"
+              aria-invalid="{{ 'true' if error_field == 'dias_sintomas' else 'false' }}"
+              {% if error_field == 'dias_sintomas' and error %}aria-describedby="pista-dias error-formulario"{% else %}aria-describedby="pista-dias"{% endif %}
+              {% if error_field == 'dias_sintomas' %}class="invalido"{% endif %}>
+            <p id="pista-dias" class="pista">Desde el inicio del episodio hasta hoy.</p>
+          </div>
+
+          <div class="campo">
+            <label for="numero_sintomas">Número de síntomas <span class="obligatorio">(obligatorio)</span></label>
+            <input id="numero_sintomas" name="numero_sintomas" type="number" min="0" max="30" step="1" required
+              value="{{ form_values.numero_sintomas }}"
+              aria-required="true"
+              aria-invalid="{{ 'true' if error_field == 'numero_sintomas' else 'false' }}"
+              {% if error_field == 'numero_sintomas' and error %}aria-describedby="pista-sintomas error-formulario"{% else %}aria-describedby="pista-sintomas"{% endif %}
+              {% if error_field == 'numero_sintomas' %}class="invalido"{% endif %}>
+            <p id="pista-sintomas" class="pista">Cuántos síntomas presenta además de los valores anteriores.</p>
+          </div>
+        </div>
+
+        <button type="submit" class="boton-principal">Obtener estado</button>
+      </form>
+
+      <section class="ejemplos" aria-label="Casos de prueba">
+        <h2>Probar los cuatro estados</h2>
+        <p class="pista">Cada botón carga un caso y consulta el servicio.</p>
+        <div class="fila-ejemplos">
+          {% for ejemplo in examples %}
+          <button type="button" class="boton-ejemplo"
+            data-fiebre="{{ ejemplo.fever_celsius }}"
+            data-dolor="{{ ejemplo.pain_intensity }}"
+            data-dias="{{ ejemplo.symptom_days }}"
+            data-sintomas="{{ ejemplo.symptom_count }}">
+            Probar: {{ ejemplo.expected_state }}
+          </button>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="reglas">
+        <h2>Cómo se obtiene el estado</h2>
+        <ol>
+          {% for regla in rules %}
+          <li>{{ regla }}</li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <details class="enlaces">
+        <summary>Comprobar los cuatro estados por enlace</summary>
+        <ul>
+          {% for ejemplo in examples %}
+          <li>
+            <a href="{{ url_for('predict_api', fiebre=ejemplo.fever_celsius, intensidad_dolor=ejemplo.pain_intensity, dias_sintomas=ejemplo.symptom_days, numero_sintomas=ejemplo.symptom_count) }}">{{ ejemplo.expected_state }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </details>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='formulario.js') }}"></script>
+</body>
+</html>
