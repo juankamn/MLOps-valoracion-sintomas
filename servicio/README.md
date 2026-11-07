@@ -48,8 +48,11 @@ Estos cuatro casos cubren los cuatro estados:
 
 ## Requisitos
 
-- Docker Desktop en ejecución.
+- Docker con un motor de contenedores en ejecución, por ejemplo Docker Desktop o Colima.
+- Si usa Colima, inícielo con `colima start`.
 - La primera construcción descarga la imagen base de Python y necesita internet.
+
+Los comandos de construcción y ejecución funcionan con Docker en Windows, macOS y Linux. El proyecto usa una imagen pública y no requiere una cuenta ni un gestor de credenciales específico para construirla.
 
 Abra una terminal en esta carpeta (`servicio`), que es donde está el `Dockerfile`.
 
@@ -64,62 +67,62 @@ El punto final indica que el contexto es la carpeta actual. Si Docker responde q
 ## Ejecutar el servicio
 
 ```powershell
-docker run --rm -p 5000:5000 valoracion-sintomas:0.1
-```
-
-Deje esa terminal abierta. El servicio queda en `http://localhost:5000`.
-
-- `5000` de la izquierda es el puerto de su equipo.
-- `5000` de la derecha es el puerto dentro del contenedor.
-
-Si el puerto 5000 ya está ocupado:
-
-```powershell
 docker run --rm -p 8080:5000 valoracion-sintomas:0.1
 ```
 
-En ese caso abra `http://localhost:8080` y use 8080 en los enlaces de abajo.
+Deje esa terminal abierta. El servicio queda en `http://localhost:8080`.
+
+- `8080` de la izquierda es el puerto de su equipo.
+- `5000` de la derecha es el puerto dentro del contenedor.
+
+En macOS, AirPlay puede ocupar el puerto 5000; por eso se usa 8080 en el equipo. Si 8080 también está ocupado, elija otro puerto, por ejemplo 8081:
+
+```powershell
+docker run --rm -p 8081:5000 valoracion-sintomas:0.1
+```
+
+En ese caso abra `http://localhost:8081` y use 8081 en los enlaces de abajo.
 
 Para ejecutar en segundo plano:
 
 ```powershell
-docker run -d --name valoracion-sintomas -p 5000:5000 valoracion-sintomas:0.1
+docker run -d --name valoracion-sintomas -p 8080:5000 valoracion-sintomas:0.1
 ```
 
 ## Obtener una predicción
 
 ### Página web
 
-1. Abra `http://localhost:5000`.
+1. Abra `http://localhost:8080`.
 2. Escriba los cuatro datos y pulse **Obtener estado**.
 3. O pulse uno de los botones **Probar**. Cada botón corresponde a un estado de la tabla.
 
 ### Enlaces directos
 
-En PowerShell ponga la dirección entre comillas, porque `&` es un operador.
+Estos ejemplos usan `curl` en macOS o Linux. En Windows PowerShell use `curl.exe` en lugar de `curl`. Mantenga la dirección entre comillas.
 
 NO ENFERMO:
 
 ```powershell
-curl.exe -s "http://localhost:5000/api/predecir?fiebre=36.6&intensidad_dolor=1&dias_sintomas=1&numero_sintomas=0"
+curl -s "http://localhost:8080/api/predecir?fiebre=36.6&intensidad_dolor=1&dias_sintomas=1&numero_sintomas=0"
 ```
 
 ENFERMEDAD LEVE:
 
 ```powershell
-curl.exe -s "http://localhost:5000/api/predecir?fiebre=37.6&intensidad_dolor=4&dias_sintomas=4&numero_sintomas=2"
+curl -s "http://localhost:8080/api/predecir?fiebre=37.6&intensidad_dolor=4&dias_sintomas=4&numero_sintomas=2"
 ```
 
 ENFERMEDAD AGUDA:
 
 ```powershell
-curl.exe -s "http://localhost:5000/api/predecir?fiebre=39.2&intensidad_dolor=8&dias_sintomas=2&numero_sintomas=6"
+curl -s "http://localhost:8080/api/predecir?fiebre=39.2&intensidad_dolor=8&dias_sintomas=2&numero_sintomas=6"
 ```
 
 ENFERMEDAD CRÓNICA:
 
 ```powershell
-curl.exe -s "http://localhost:5000/api/predecir?fiebre=37.0&intensidad_dolor=3&dias_sintomas=120&numero_sintomas=2"
+curl -s "http://localhost:8080/api/predecir?fiebre=37.0&intensidad_dolor=3&dias_sintomas=120&numero_sintomas=2"
 ```
 
 La respuesta trae `estado`, `regla`, `version` y `entrada`. Ejemplo:
@@ -140,8 +143,18 @@ La respuesta trae `estado`, `regla`, `version` y `entrada`. Ejemplo:
 
 ### API con POST
 
+En Windows PowerShell:
+
 ```powershell
-Invoke-RestMethod -Method Post -Uri http://localhost:5000/api/predecir -ContentType "application/json; charset=utf-8" -Body '{"fiebre":39.2,"intensidad_dolor":8,"dias_sintomas":2,"numero_sintomas":6}'
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/predecir -ContentType "application/json; charset=utf-8" -Body '{"fiebre":39.2,"intensidad_dolor":8,"dias_sintomas":2,"numero_sintomas":6}'
+```
+
+En macOS o Linux:
+
+```sh
+curl -X POST http://localhost:8080/api/predecir \
+  -H 'Content-Type: application/json' \
+  -d '{"fiebre":39.2,"intensidad_dolor":8,"dias_sintomas":2,"numero_sintomas":6}'
 ```
 
 El estado de esa llamada es `ENFERMEDAD AGUDA`. Cambie los cuatro números según la tabla para obtener los otros estados.
@@ -181,6 +194,6 @@ docker rm valoracion-sintomas
 | Qué ocurre | Qué hacer |
 | --- | --- |
 | No se encuentra el Dockerfile | Entre a la carpeta `servicio` y vuelva a construir. |
-| El puerto ya está asignado | Use `-p 8080:5000` y abra el puerto 8080. |
-| La primera construcción falla por red | Confirme internet y que Docker Desktop esté en ejecución. |
+| El puerto ya está asignado | Use `-p 8081:5000` y abra el puerto 8081. En macOS, AirPlay puede responder en el puerto 5000. |
+| La primera construcción falla por red | Confirme la conexión a internet y que el motor de Docker esté en ejecución. |
 | La página no abre | Revise que el contenedor siga corriendo y que el puerto de la dirección coincida con el de la izquierda en `docker run`. |
